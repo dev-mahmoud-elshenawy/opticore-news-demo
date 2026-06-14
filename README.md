@@ -1,56 +1,76 @@
-# Welcome to your Expo app 👋
+# OptiCore News Demo
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A reference Expo app showing a **feature-based architecture** on top of
+[`opticore-react-native`](../opticore-react-native): the **repository pattern** for the API
+layer, **React Query** for server-state caching, and **Zustand** for ephemeral feature/UI
+state. The sample feature is a News list backed by [newsapi.org](https://newsapi.org).
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Getting started
 
 ```bash
-npm run reset-project
+# 1. Install (the library is linked via file:../opticore-react-native)
+npm install --legacy-peer-deps
+
+# 2. Provide your newsapi.org key (gitignored)
+cp .env.example .env        # then edit .env and set EXPO_PUBLIC_NEWS_API_KEY
+
+# 3. Run
+npm start                   # then press i / a, or scan in a dev build
+
+# Quality gates
+npm test                    # jest (3 suites, 7 tests)
+npx tsc --noEmit            # 0 type errors
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+> newsapi.org's free tier only authorizes requests from `localhost`/development origins, so this
+> demo is dev-only.
 
-### Other setup steps
+## Architecture — one feature, layered
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```
+src/
+├── app/                         # expo-router routes (thin — delegate to the feature)
+│   ├── _layout.tsx              # <OptiCoreProvider config={opticoreConfig}> wraps the app
+│   ├── index.tsx                # redirects to /(news)
+│   └── (news)/
+│       ├── index.tsx            # renders features/news → NewsListScreen
+│       └── [id].tsx             # article detail (opens the URL in a browser)
+├── core/
+│   └── opticore.config.ts       # CoreConfig: newsapi baseURL + X-Api-Key header
+└── features/news/               # the vertical slice
+    ├── api/newsRepository.ts     # repository — the ONLY code that knows newsapi
+    ├── model/news.types.ts       # Article, NewsCategory, TopHeadlinesResponse
+    ├── query/                    # useTopHeadlines (React Query) + newsKeys factory
+    ├── store/newsFilterStore.ts  # Zustand — selected category (UI state only)
+    ├── ui/                       # NewsListScreen, CategoryFilter, ArticleCard
+    └── index.ts                  # the feature's public surface
+```
 
-## Learn more
+### Data flow
 
-To learn more about developing your project with Expo, look at the following resources:
+```
+CategoryFilter ──set──▶ Zustand store (category)
+                              │
+NewsListScreen reads category ┘
+        └─▶ useTopHeadlines(category)              [React Query: cache/loading/error/refetch]
+                   └─▶ newsRepository.getTopHeadlines(category)   [Repository]
+                              └─▶ OptiCore ApiClient.request({ GET, /top-headlines?... })
+                                     └─▶ newsapi.org/v2
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+**Layering rules**
+- Routes and UI consume the **hook** and **store** — never the repository directly.
+- The **repository** is the only place that knows newsapi's URL shape and envelope; it returns
+  typed `Article[]` and throws on API errors.
+- **Zustand** holds only ephemeral UI state (the selected category). Server data lives in **React
+  Query**, never the store.
+- All HTTP goes through **OptiCore's `ApiClient`** (baseURL, retry, the `X-Api-Key` header set
+  once in `core/opticore.config.ts`).
 
-## Join the community
+## Notes
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Linked to the local library via `"opticore-react-native": "file:../opticore-react-native"` with
+  `withOptiCoreMetroConfig` (in `metro.config.js`) to keep a single React instance.
+- This app runs on Expo SDK 56; the library targets SDK 54 but uses open `>=` peer ranges. The
+  Metro bundle builds cleanly; confirm runtime behavior on a device/simulator.
+- Install uses `--legacy-peer-deps` (mixed peer ranges across the SDK 56 toolchain).
