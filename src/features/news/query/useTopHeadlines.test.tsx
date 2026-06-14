@@ -1,0 +1,38 @@
+import React from 'react';
+import { renderHook, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useTopHeadlines } from './useTopHeadlines';
+import { newsRepository } from '../api/newsRepository';
+import type { Article } from '../model/news.types';
+
+const article: Article = {
+  source: { id: null, name: 'BBC' },
+  author: null,
+  title: 'Headline',
+  description: null,
+  url: 'https://example.com/x',
+  urlToImage: null,
+  publishedAt: '2026-06-14T00:00:00Z',
+  content: null,
+};
+
+function wrapper({ children }: { children: React.ReactNode }) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
+
+describe('useTopHeadlines', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('returns articles from the repository for the category', async () => {
+    const spy = jest
+      .spyOn(newsRepository, 'getTopHeadlines')
+      .mockResolvedValue([article]);
+
+    const { result } = await renderHook(() => useTopHeadlines('science'), { wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(spy).toHaveBeenCalledWith('science');
+    expect(result.current.data).toEqual([article]);
+  });
+});
