@@ -18,7 +18,7 @@ export function NewsListScreen() {
         <ActivityIndicator style={styles.center} size="large" />
       ) : isError ? (
         <View style={styles.center}>
-          <Text style={styles.errorText}>{(error as Error)?.message ?? 'Something went wrong'}</Text>
+          <Text style={styles.errorText}>{error?.message ?? 'Something went wrong'}</Text>
           <Pressable style={styles.retry} onPress={() => refetch()}>
             <Text style={styles.retryText}>Retry</Text>
           </Pressable>
@@ -35,7 +35,14 @@ export function NewsListScreen() {
           renderItem={({ item }) => (
             <ArticleCard
               article={item}
-              onPress={() => router.push({ pathname: '/(news)/[id]', params: { id: item.url } })}
+              onPress={() =>
+                router.push({
+                  pathname: '/(news)/[id]',
+                  // Encode so the full article URL survives as a single route segment
+                  // (it contains '/', '?', '&'); the detail screen decodes it.
+                  params: { id: encodeURIComponent(item.url) },
+                })
+              }
             />
           )}
         />

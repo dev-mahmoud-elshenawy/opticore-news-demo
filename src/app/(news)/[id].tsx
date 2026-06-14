@@ -4,11 +4,20 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 
 export default function ArticleDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  // The list encodes the article URL before passing it as the route param.
+  const url = id ? decodeURIComponent(id) : undefined;
+
+  const openInBrowser = () => {
+    if (!url) return;
+    // openURL rejects on malformed/unhandleable URLs — swallow rather than crash.
+    Linking.openURL(url).catch(() => undefined);
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Stack.Screen options={{ title: 'Article' }} />
-      <Text style={styles.url}>{id}</Text>
-      <Pressable style={styles.button} onPress={() => id && Linking.openURL(id)}>
+      <Text style={styles.url}>{url}</Text>
+      <Pressable style={styles.button} onPress={openInBrowser}>
         <Text style={styles.buttonText}>Open in browser</Text>
       </Pressable>
     </ScrollView>
