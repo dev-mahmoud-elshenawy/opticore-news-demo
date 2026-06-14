@@ -32,7 +32,7 @@ describe('useTopHeadlines', () => {
       .spyOn(newsRepository, 'getTopHeadlines')
       .mockResolvedValue([article]);
 
-    const { result } = await renderHook(() => useTopHeadlines('science'), { wrapper });
+    const { result } = renderHook(() => useTopHeadlines('science'), { wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(spy).toHaveBeenCalledWith('science');
