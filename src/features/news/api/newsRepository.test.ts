@@ -17,6 +17,11 @@ describe('newsRepository.getTopHeadlines', () => {
   let requestSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    // Ensure the singleton is considered initialized so the fail-fast guard in
+    // request() never fires before the spy intercepts the call.
+    if (!ApiClient.getInstance().isInitialized()) {
+      ApiClient.getInstance().configure({ baseURL: 'https://test.example.com' });
+    }
     requestSpy = jest
       .spyOn(ApiClient.getInstance(), 'request')
       .mockResolvedValue({
@@ -48,5 +53,16 @@ describe('newsRepository.getTopHeadlines', () => {
     } as never);
 
     await expect(newsRepository.getTopHeadlines('business')).rejects.toThrow('bad key');
+  });
+
+  it('returns an empty array when articles is absent on an ok response', async () => {
+    requestSpy.mockResolvedValue({
+      data: { status: 'ok', totalResults: 0 },
+      status: 200,
+      headers: {},
+      config: {},
+    } as never);
+
+    await expect(newsRepository.getTopHeadlines('general')).resolves.toEqual([]);
   });
 });
