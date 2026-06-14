@@ -17,7 +17,10 @@ const article: Article = {
 };
 
 function wrapper({ children }: { children: React.ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // Stable across re-renders so cached query state survives a rerender.
+  const [client] = React.useState(
+    () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  );
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
