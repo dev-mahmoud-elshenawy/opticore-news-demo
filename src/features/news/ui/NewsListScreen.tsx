@@ -35,7 +35,7 @@ export function NewsListScreen() {
           renderItem={({ item }) => (
             <ArticleCard
               article={item}
-              onPress={() => router.push(`/(news)/${encodeURIComponent(item.url)}` as never)}
+              onPress={() => router.push({ pathname: '/(news)/[id]', params: { id: item.url } })}
             />
           )}
         />
