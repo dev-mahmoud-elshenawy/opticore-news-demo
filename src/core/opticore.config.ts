@@ -6,6 +6,9 @@ export const opticoreConfig: CoreConfig = {
     baseURL: 'https://newsapi.org/v2',
     headers: { 'X-Api-Key': process.env.EXPO_PUBLIC_NEWS_API_KEY ?? '' },
     timeout: 15000,
+    // Errors are handled automatically: OptiCore throws an ApiError on any
+    // non-2xx response (with the server's message), so repositories just map
+    // the successful body to domain data.
   },
   logger: { level: LogLevel.INFO },
 };

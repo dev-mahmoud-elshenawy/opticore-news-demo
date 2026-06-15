@@ -1,3 +1,6 @@
+import type { ApiResult } from 'opticore-react-native';
+import type { Article } from '@/shared/models/article';
+
 export const NEWS_CATEGORIES = [
   'business',
   'entertainment',
@@ -10,27 +13,11 @@ export const NEWS_CATEGORIES = [
 
 export type NewsCategory = (typeof NEWS_CATEGORIES)[number];
 
-export interface ArticleSource {
-  id: string | null;
-  name: string;
-}
-
-export interface Article {
-  source: ArticleSource;
-  author: string | null;
-  title: string;
-  description: string | null;
-  url: string;
-  urlToImage: string | null;
-  publishedAt: string;
-  content: string | null;
-}
-
-/** Raw envelope returned by newsapi.org /top-headlines */
-export interface TopHeadlinesResponse {
-  status: 'ok' | 'error';
-  code?: string;
-  message?: string;
+/**
+ * Raw body returned by newsapi.org article endpoints (/top-headlines, /everything).
+ * Extends the core ApiResult envelope (status/message/code) with newsapi's payload.
+ */
+export interface ArticlesResponse extends ApiResult {
   totalResults?: number;
   articles?: Article[];
 }

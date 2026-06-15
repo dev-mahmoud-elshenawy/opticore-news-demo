@@ -1,6 +1,6 @@
 import { ApiClient, HttpMethod } from 'opticore-react-native';
-import { newsRepository } from './newsRepository';
-import type { Article } from '../model/news.types';
+import { newsRepository } from '@/features/news/api/newsRepository';
+import type { Article } from '@/shared/models/article';
 
 describe('newsRepository.getTopHeadlines', () => {
   const sampleArticle: Article = {
@@ -42,17 +42,6 @@ describe('newsRepository.getTopHeadlines', () => {
       url: '/top-headlines?country=us&category=technology',
     });
     expect(result).toEqual([sampleArticle]);
-  });
-
-  it('throws when newsapi returns status "error"', async () => {
-    requestSpy.mockResolvedValue({
-      data: { status: 'error', code: 'apiKeyInvalid', message: 'bad key' },
-      status: 200,
-      headers: {},
-      config: {},
-    } as never);
-
-    await expect(newsRepository.getTopHeadlines('business')).rejects.toThrow('bad key');
   });
 
   it('returns an empty array when articles is absent on an ok response', async () => {

@@ -1,4 +1,4 @@
-import { useNewsFilterStore } from './newsFilterStore';
+import { useNewsFilterStore } from '@/features/news/store/newsFilterStore';
 
 describe('newsFilterStore', () => {
   beforeEach(() => useNewsFilterStore.getState().reset());

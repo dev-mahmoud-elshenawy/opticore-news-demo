@@ -1,9 +1,9 @@
 import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useTopHeadlines } from './useTopHeadlines';
-import { newsRepository } from '../api/newsRepository';
-import type { Article } from '../model/news.types';
+import { useTopHeadlines } from '@/features/news/query/useTopHeadlines';
+import { newsRepository } from '@/features/news/api/newsRepository';
+import type { Article } from '@/shared/models/article';
 
 const article: Article = {
   source: { id: null, name: 'BBC' },
