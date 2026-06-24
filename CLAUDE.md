@@ -33,7 +33,8 @@ docs before changing native code.
 
 This is a reference app for the locally-linked **`opticore-react-native`** library
 (`file:../opticore-react-native`). The defining constraint is a strict **layered, feature-based**
-structure — understanding the boundaries matters more than any single file.
+structure — understanding the boundaries matters more than any single file. See
+[ORIENTATION.md](./ORIENTATION.md) for a diagram-first map of these layers.
 
 **The dependency chain (each layer only knows the one below it):**
 

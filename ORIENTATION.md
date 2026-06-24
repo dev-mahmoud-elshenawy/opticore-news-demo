@@ -174,8 +174,9 @@ flowchart TD
     ui --> idx
     q --> idx
     store --> idx
-    note["repository + ViewModels NOT exported<br/>(internal details)"]
-    api -.x.- note
+    internal["NOT exported (internal):<br/>repository · ViewModels"]
+    api -.-> internal
+    hooks -.-> internal
 ```
 
 Consumers import from the feature root `index.ts` — never deep paths, never the repository or VMs.

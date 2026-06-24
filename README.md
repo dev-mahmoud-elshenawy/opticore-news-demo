@@ -28,6 +28,8 @@ npx tsc --noEmit            # 0 type errors
 
 ## Architecture — layered, multi-feature
 
+> For a diagram-first map (Mermaid), see [ORIENTATION.md](./ORIENTATION.md).
+
 ```
 src/
 ├── app/                         # expo-router routes (thin — delegate to features)
