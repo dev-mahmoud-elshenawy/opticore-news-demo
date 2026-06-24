@@ -1,23 +1,17 @@
 import React from 'react';
-import { Linking } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { ArticleDetailScreen, useArticleByUrl } from '@/features/news';
-import { useSavedStore } from '@/features/saved';
+import { ArticleDetailScreen } from '@/features/news';
 import { ARTICLE_TITLE } from '@/core/navigation/tabs';
+import { useArticleDetail } from '@/composition/useArticleDetail';
 
 /**
- * Shared article-detail route (pushed over the tabs). Composes the news feature
- * (find the article) and the saved feature (bookmark toggle) here, so neither
- * feature imports the other. expo-router decodes the `url` param automatically.
+ * Shared article-detail route (pushed over the tabs). Composition of the news +
+ * saved features lives in the composition layer (`useArticleDetail`); this route
+ * just binds that ViewModel to the presentational screen. expo-router decodes `url`.
  */
 export default function ArticleRoute() {
   const { url } = useLocalSearchParams<{ url: string }>();
-  const cached = useArticleByUrl(url);
-  const savedItem = useSavedStore((s) => s.items.find((a) => a.url === url));
-  const article = cached ?? savedItem;
-
-  const isSaved = useSavedStore((s) => (url ? s.isSaved(url) : false));
-  const toggle = useSavedStore((s) => s.toggle);
+  const { article, isSaved, onToggleSave, onOpen } = useArticleDetail(url);
 
   return (
     <>
@@ -25,8 +19,8 @@ export default function ArticleRoute() {
       <ArticleDetailScreen
         article={article}
         isSaved={isSaved}
-        onToggleSave={() => article && toggle(article)}
-        onOpen={() => article && Linking.openURL(article.url).catch(() => undefined)}
+        onToggleSave={onToggleSave}
+        onOpen={onOpen}
       />
     </>
   );

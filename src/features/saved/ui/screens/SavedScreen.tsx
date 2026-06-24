@@ -1,26 +1,12 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import type { Article } from '@/shared/models/article';
-import { ArticleCard } from '@/shared/components/ArticleCard';
 import { articleKeyExtractor, LIST_PERF_PROPS } from '@/shared/components/articleList';
 import { useStyles, type AppTheme } from '@/shared/theme/useStyles';
-import { Routes } from '@/core/navigation/routes';
-import { useSavedStore } from '../../store/savedStore';
+import { useSavedScreen } from '../../hooks/useSavedScreen';
 
 export function SavedScreen() {
-  const router = useRouter();
   const styles = useStyles(createStyles);
-  const items = useSavedStore((s) => s.items);
-
-  const openArticle = useCallback(
-    (article: Article) => router.push(Routes.article(article.url)),
-    [router],
-  );
-  const renderItem = useCallback(
-    ({ item }: { item: Article }) => <ArticleCard article={item} onPress={openArticle} />,
-    [openArticle],
-  );
+  const { items, renderItem } = useSavedScreen();
 
   if (items.length === 0) {
     return (

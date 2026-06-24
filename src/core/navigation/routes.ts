@@ -6,8 +6,8 @@
  * encodeURIComponent needed for navigation.
  */
 export const Routes = {
-  headlines: '/(tabs)/headlines',
-  search: '/(tabs)/search',
-  saved: '/(tabs)/saved',
+  headlines: '/headlines',
+  search: '/search',
+  saved: '/saved',
   article: (url: string) => ({ pathname: '/article/[url]' as const, params: { url } }),
 } as const;

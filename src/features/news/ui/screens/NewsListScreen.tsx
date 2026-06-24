@@ -1,31 +1,14 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { toMessage } from 'opticore-react-native';
-import type { Article } from '@/shared/models/article';
-import { ArticleCard } from '@/shared/components/ArticleCard';
 import { articleKeyExtractor, LIST_PERF_PROPS } from '@/shared/components/articleList';
 import { useStyles, type AppTheme } from '@/shared/theme/useStyles';
-import { Routes } from '@/core/navigation/routes';
-import { useNewsFilterStore } from '../../store/newsFilterStore';
-import { useTopHeadlines } from '../../query/useTopHeadlines';
+import { useNewsListScreen } from '../../hooks/useNewsListScreen';
 import { CategoryFilter } from '../components/CategoryFilter';
 
 export function NewsListScreen() {
-  const router = useRouter();
   const styles = useStyles(createStyles);
-  const category = useNewsFilterStore((s) => s.category);
-  const { data, isLoading, isError, error, refetch } = useTopHeadlines(category);
-
-  // Stable across renders so memoized rows don't re-render on every parent update.
-  const openArticle = useCallback(
-    (article: Article) => router.push(Routes.article(article.url)),
-    [router],
-  );
-  const renderItem = useCallback(
-    ({ item }: { item: Article }) => <ArticleCard article={item} onPress={openArticle} />,
-    [openArticle],
-  );
+  const { data, isLoading, isError, error, refetch, renderItem } = useNewsListScreen();
 
   return (
     <View style={styles.container}>

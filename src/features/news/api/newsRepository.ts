@@ -14,7 +14,7 @@ export const newsRepository = {
   async getTopHeadlines(category: NewsCategory): Promise<Article[]> {
     const { data } = await ApiClient.getInstance().request<ArticlesResponse>({
       method: HttpMethod.GET,
-      url: newsEndpoints.topHeadlines(category),
+      ...newsEndpoints.topHeadlines(category),
     });
     return data.articles ?? [];
   },
@@ -22,7 +22,7 @@ export const newsRepository = {
   async searchEverything(query: string): Promise<Article[]> {
     const { data } = await ApiClient.getInstance().request<ArticlesResponse>({
       method: HttpMethod.GET,
-      url: newsEndpoints.everything(query),
+      ...newsEndpoints.everything(query),
     });
     return data.articles ?? [];
   },

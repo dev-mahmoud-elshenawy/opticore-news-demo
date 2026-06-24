@@ -10,7 +10,7 @@ layout, backed by [newsapi.org](https://newsapi.org).
 
 ```bash
 # 1. Install (the library is linked via file:../opticore-react-native)
-npm install --legacy-peer-deps
+npm install
 
 # 2. Provide your newsapi.org key (gitignored)
 cp .env.example .env        # then edit .env and set EXPO_PUBLIC_NEWS_API_KEY
@@ -38,7 +38,7 @@ src/
 │   │   ├── headlines.tsx        # → features/news NewsListScreen
 │   │   ├── search.tsx           # → features/news SearchScreen
 │   │   └── saved.tsx            # → features/saved SavedScreen
-│   └── article/[url].tsx        # shared article-detail route (by URL)
+│   └── article/[url].tsx        # article-detail route → binds composition/useArticleDetail
 ├── core/
 │   ├── opticore.config.ts       # CoreConfig: newsapi baseURL + X-Api-Key header
 │   ├── navigation/              # routes.ts (typed route builders) + tabs.ts (tab defs)
@@ -46,20 +46,25 @@ src/
 ├── shared/                      # cross-feature building blocks
 │   ├── models/article.ts        # Article domain model (used by news + saved)
 │   ├── components/              # ArticleCard, article list helpers
+│   ├── hooks/useOpenArticle.ts  # shared nav command (wraps useRouter once)
 │   └── theme/useStyles.ts       # styling hook
+├── composition/                # cross-feature composition (above features, below routes)
+│   └── useArticleDetail.ts      # article-detail VM: news (cached article) + saved (bookmark)
 └── features/
     ├── news/                    # headlines + search vertical slice
     │   ├── api/
-    │   │   ├── newsEndpoints.ts  # the single source of URL/query construction (buildUrl)
+    │   │   ├── newsEndpoints.ts  # single source of paths/params ({ url, params } descriptors)
     │   │   └── newsRepository.ts # repository — the ONLY code that knows newsapi
     │   ├── model/news.types.ts   # NewsCategory, TopHeadlinesResponse, …
     │   ├── query/                # useTopHeadlines, useSearchNews, useArticleByUrl + newsKeys
     │   ├── store/newsFilterStore.ts  # Zustand — selected category (UI state only)
+    │   ├── hooks/                # ViewModels: useNewsListScreen, useSearchScreen
     │   ├── ui/components/        # CategoryFilter, SearchBar
-    │   ├── ui/screens/           # NewsListScreen, SearchScreen, ArticleDetailScreen
+    │   ├── ui/screens/           # NewsListScreen, SearchScreen (Views), ArticleDetailScreen (presentational)
     │   └── index.ts              # the feature's public surface
     └── saved/                   # bookmarks vertical slice (store-only, no API)
         ├── store/savedStore.ts   # persisted Zustand store (createPersistStorage)
+        ├── hooks/useSavedScreen.tsx  # ViewModel
         ├── ui/screens/SavedScreen.tsx
         └── index.ts
 
@@ -69,24 +74,28 @@ test/                            # jest suites mirror src/ (repository, query, s
 ### Data flow
 
 ```
-CategoryFilter ──set──▶ Zustand newsFilterStore (category)
-                              │
-NewsListScreen reads category ┘
+NewsListScreen (View) ─▶ useNewsListScreen (ViewModel)
+        ├─ reads newsFilterStore.category   (CategoryFilter sets it)
         └─▶ useTopHeadlines(category)              [React Query: cache/loading/error/refetch]
                    └─▶ newsRepository.getTopHeadlines(category)   [Repository]
-                              └─▶ newsEndpoints.topHeadlines(category)   [URL builder]
+                              └─▶ newsEndpoints.topHeadlines(category)   [{ url, params }]
                                      └─▶ OptiCore ApiClient.request({ GET, … })
                                             └─▶ newsapi.org/v2
 
-SearchBar ──query──▶ SearchScreen ─▶ useSearchNews(query) ─▶ newsRepository.search(query) ─▶ …
-ArticleCard "save" ──▶ useSavedStore.toggle(article)  [persisted across restarts]
+SearchScreen (View) ─▶ useSearchScreen (ViewModel: term + debounce) ─▶ useSearchNews(query) ─▶ newsRepository.search(query) ─▶ …
+SavedScreen (View)  ─▶ useSavedScreen (ViewModel) ─▶ useSavedStore.items
+article/[url] route ─▶ useArticleDetail (composition: news cache + saved) ─▶ ArticleDetailScreen
+ArticleCard "save"  ──▶ useSavedStore.toggle(article)  [persisted across restarts]
 ```
 
 **Layering rules**
-- Routes and UI consume the **hooks** and **stores** — never the repository directly.
+- Screens are thin **Views** — each binds one **ViewModel** (`hooks/use*Screen`) that owns the data
+  hooks, local state, and navigation; the View never calls `useQuery`/stores/`useRouter`/the
+  repository directly (`renderItem` stays in the View). Cross-feature screens compose in
+  `src/composition/` (e.g. `useArticleDetail`), since features never import each other.
 - The **repository** is the only place that knows newsapi's envelope; **`newsEndpoints`** is the
-  only place that builds URLs/query strings (via OptiCore's `buildUrl`). It returns typed
-  `Article[]` and throws on API errors.
+  only place that defines paths/query params (returning `{ url, params }` descriptors that
+  `ApiClient` serializes). The repository returns typed `Article[]` and throws on API errors.
 - **Zustand** holds only client state: ephemeral UI state (`newsFilterStore`'s category) or
   persisted bookmarks (`savedStore`). Server data lives in **React Query**, never the store.
 - Navigation uses **typed route builders** in `core/navigation/routes.ts` — no inline path
@@ -100,4 +109,3 @@ ArticleCard "save" ──▶ useSavedStore.toggle(article)  [persisted across re
 - Linked to the local library via `"opticore-react-native": "file:../opticore-react-native"` with
   `withOptiCoreMetroConfig` (in `metro.config.js`) to keep a single React instance.
 - Saved articles persist via OptiCore's `createPersistStorage`; only the `items` array is written.
-- Install uses `--legacy-peer-deps` (mixed peer ranges across the toolchain).

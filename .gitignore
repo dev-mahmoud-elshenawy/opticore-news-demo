@@ -37,6 +37,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# editor local history
+.history/
+
 example
 
 # generated native folders

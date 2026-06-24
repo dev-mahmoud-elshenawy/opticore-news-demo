@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm install --legacy-peer-deps   # required — mixed peer ranges across the toolchain
+npm install                      # install dependencies
 npm start                        # expo start (press i / a, or scan in Expo Go / dev build)
 npm run ios | npm run android    # native run
 npm run web                      # expo start --web
@@ -38,7 +38,7 @@ structure — understanding the boundaries matters more than any single file.
 **The dependency chain (each layer only knows the one below it):**
 
 ```
-route (src/app) → screen/UI → React Query hook → repository → newsEndpoints → OptiCore ApiClient → newsapi.org
+route (src/app) → screen (View) → ViewModel hook → React Query hook → repository → newsEndpoints → OptiCore ApiClient → newsapi.org
 ```
 
 - **`src/app/`** — expo-router routes only. They are thin and delegate to a feature's screen. Layout
@@ -47,21 +47,33 @@ route (src/app) → screen/UI → React Query hook → repository → newsEndpoi
   (server cache).
 - **`src/features/<feature>/`** — vertical slices with a public surface via `index.ts`. `news` owns
   headlines + search; `saved` is a store-only feature (no API). Each slice keeps its own
-  `api/ model/ query/ store/ ui/`.
+  `api/ model/ query/ store/ hooks/ ui/` — where `hooks/` holds the per-screen **ViewModels**
+  (`use*Screen`) and `ui/` holds the presentational screens/components.
 - **`src/shared/`** — cross-feature building blocks (the `Article` domain model, `ArticleCard`,
-  theme). The `Article` model lives here because both `news` and `saved` use it.
+  theme, and `hooks/useOpenArticle`). The `Article` model lives here because both `news` and
+  `saved` use it.
 - **`src/core/`** — app-wide wiring: `opticore.config.ts` (newsapi baseURL + `X-Api-Key`),
   `navigation/` (typed route builders + tab defs), `query/queryClient.ts`.
+- **`src/composition/`** — cross-feature composition, above features and below the router.
+  `useArticleDetail` lives here: the article-detail route combines `news` (cached article) and
+  `saved` (bookmark toggle), and since neither feature may import the other, the composition root
+  is its own layer.
 
 **Non-negotiable layering rules** (these are what reviews check for):
 
-- Routes and UI consume **hooks** and **stores** — never the repository directly.
+- Screens are thin **Views**: each binds exactly one **ViewModel** (`hooks/use*Screen`) and renders.
+  The ViewModel owns the data hooks, local state, and navigation commands — the View never calls
+  `useQuery`, stores, `useRouter`, or the repository directly. (`renderItem` stays in the View.)
+  Pure presentational screens with no data (e.g. `ArticleDetailScreen`) take props and need no ViewModel.
 - The **repository** (`newsRepository`) is the only code that knows newsapi's response envelope.
-  **`newsEndpoints`** is the only place that builds URLs/query strings (via OptiCore's `buildUrl`) —
+  **`newsEndpoints`** is the only place that defines paths/query params — it returns
+  `{ url, params }` descriptors and lets `ApiClient` (axios) serialize the query string, so there's
   no inline string concatenation or `encodeURIComponent` at call sites.
 - **Zustand holds client state only**: ephemeral UI state (`newsFilterStore` = selected category)
   or persisted bookmarks (`savedStore`). Server data lives in **React Query**, never in a store.
-- **Navigation uses typed builders** from `core/navigation/routes.ts` — no inline path strings.
+- **Navigation uses typed builders** from `core/navigation/routes.ts` — no inline path strings. The
+  shared `useOpenArticle` hook (`shared/hooks`) wraps `useRouter` once so screens/ViewModels never
+  repeat it.
 - **Error handling is automatic**: OptiCore's `ApiClient` throws an `ApiError` on any non-2xx
   response (carrying the server message), so repositories only map the successful body to typed
   domain data — they do not branch on status codes.

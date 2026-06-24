@@ -39,7 +39,8 @@ describe('newsRepository.getTopHeadlines', () => {
 
     expect(requestSpy).toHaveBeenCalledWith({
       method: HttpMethod.GET,
-      url: '/top-headlines?country=us&category=technology',
+      url: '/top-headlines',
+      params: { country: 'us', category: 'technology' },
     });
     expect(result).toEqual([sampleArticle]);
   });

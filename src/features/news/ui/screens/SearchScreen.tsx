@@ -1,37 +1,20 @@
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { toMessage, useDebounce } from 'opticore-react-native';
-import type { Article } from '@/shared/models/article';
-import { ArticleCard } from '@/shared/components/ArticleCard';
+import { toMessage } from 'opticore-react-native';
 import { articleKeyExtractor, LIST_PERF_PROPS } from '@/shared/components/articleList';
 import { useStyles, type AppTheme } from '@/shared/theme/useStyles';
-import { Routes } from '@/core/navigation/routes';
+import { useSearchScreen } from '../../hooks/useSearchScreen';
 import { SearchBar } from '../components/SearchBar';
-import { useSearchNews } from '../../query/useSearchNews';
-
-const SEARCH_DEBOUNCE_MS = 400;
 
 export function SearchScreen() {
-  const router = useRouter();
   const styles = useStyles(createStyles);
-  const [term, setTerm] = useState('');
-  const debounced = useDebounce(term, SEARCH_DEBOUNCE_MS);
-  const { data, isLoading, isError, error, isFetched } = useSearchNews(debounced);
-
-  const openArticle = useCallback(
-    (article: Article) => router.push(Routes.article(article.url)),
-    [router],
-  );
-  const renderItem = useCallback(
-    ({ item }: { item: Article }) => <ArticleCard article={item} onPress={openArticle} />,
-    [openArticle],
-  );
+  const { data, isLoading, isError, error, isFetched, term, setTerm, debounced, isEmptyTerm, renderItem } =
+    useSearchScreen();
 
   return (
     <View style={styles.container}>
       <SearchBar value={term} onChangeText={setTerm} />
-      {debounced.trim().length === 0 ? (
+      {isEmptyTerm ? (
         <View style={styles.center}>
           <Text style={styles.hint}>Search for news by keyword.</Text>
         </View>

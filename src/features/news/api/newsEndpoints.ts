@@ -1,4 +1,3 @@
-import { buildUrl } from 'opticore-react-native';
 import type { NewsCategory } from '../model/news.types';
 
 /** newsapi.org path segments. */
@@ -16,18 +15,23 @@ const DEFAULTS = {
 } as const;
 
 /**
- * newsapi.org endpoint builders — the single source of URL/query construction.
- * Uses OptiCore's `buildUrl` so params are encoded consistently (no inline
- * string concatenation or manual encodeURIComponent).
+ * newsapi.org request descriptors — the single source of path + query params.
+ * Returns `{ url, params }`; ApiClient (via axios) serializes the query string,
+ * so there's no inline string concatenation, encodeURIComponent, or buildUrl at
+ * call sites.
  */
 export const newsEndpoints = {
-  topHeadlines: (category: NewsCategory) =>
-    buildUrl(PATHS.topHeadlines, { country: DEFAULTS.country, category }),
-  everything: (query: string) =>
-    buildUrl(PATHS.everything, {
+  topHeadlines: (category: NewsCategory) => ({
+    url: PATHS.topHeadlines,
+    params: { country: DEFAULTS.country, category },
+  }),
+  everything: (query: string) => ({
+    url: PATHS.everything,
+    params: {
       q: query,
       language: DEFAULTS.language,
       sortBy: DEFAULTS.sortBy,
       pageSize: DEFAULTS.searchPageSize,
-    }),
+    },
+  }),
 };
