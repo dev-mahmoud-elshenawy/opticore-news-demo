@@ -1,7 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { createQueryHook } from 'opticore-react-native';
 import type { Article } from '@/shared/models/article';
 import { newsRepository } from '../api/newsRepository';
 import { newsKeys } from './newsKeys';
+
+/** Base query hook (built with OptiCore's createQueryHook). */
+const useSearchQuery = createQueryHook<string, Article[]>(
+  (query) => newsKeys.search(query),
+  (query) => newsRepository.searchEverything(query)
+);
 
 /**
  * React Query hook for the newsapi /everything search.
@@ -9,9 +15,5 @@ import { newsKeys } from './newsKeys';
  */
 export function useSearchNews(query: string) {
   const trimmed = query.trim();
-  return useQuery<Article[]>({
-    queryKey: newsKeys.search(trimmed),
-    queryFn: () => newsRepository.searchEverything(trimmed),
-    enabled: trimmed.length > 0,
-  });
+  return useSearchQuery(trimmed, { enabled: trimmed.length > 0 });
 }
