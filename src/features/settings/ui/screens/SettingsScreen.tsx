@@ -13,7 +13,7 @@ const MODES: { label: string; value: ThemeMode }[] = [
 
 export function SettingsScreen() {
   const styles = useStyles(createStyles);
-  const { mode, setMode, fields, errors, setField, canSave, saved, submit } = useSettingsScreen();
+  const { mode, setMode, field, canSave, saved, save } = useSettingsScreen();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -37,25 +37,11 @@ export function SettingsScreen() {
       {/* Feed preferences — validated form via the shared TextField */}
       <Text style={styles.heading}>Feed preferences</Text>
 
-      <TextField
-        label="Country (2-letter code)"
-        value={fields.country}
-        error={errors.country}
-        autoCapitalize="none"
-        placeholder="us"
-        onChangeText={(v) => setField('country', v)}
-      />
+      <TextField label="Country (2-letter code)" autoCapitalize="none" placeholder="us" {...field('country')} />
 
-      <TextField
-        label="Search page size"
-        value={fields.pageSize}
-        error={errors.pageSize}
-        keyboardType="number-pad"
-        placeholder="30"
-        onChangeText={(v) => setField('pageSize', v)}
-      />
+      <TextField label="Search page size" keyboardType="number-pad" placeholder="30" {...field('pageSize')} />
 
-      <Pressable style={[styles.save, !canSave && styles.saveDisabled]} disabled={!canSave} onPress={() => void submit()}>
+      <Pressable style={[styles.save, !canSave && styles.saveDisabled]} disabled={!canSave} onPress={() => void save()}>
         <Text style={styles.saveText}>{saved ? 'Saved ✓' : 'Save'}</Text>
       </Pressable>
     </ScrollView>
