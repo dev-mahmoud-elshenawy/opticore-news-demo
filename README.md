@@ -39,7 +39,8 @@ src/
 │   │   ├── _layout.tsx          # Tabs, driven by core/navigation/tabs.ts
 │   │   ├── headlines.tsx        # → features/news NewsListScreen
 │   │   ├── search.tsx           # → features/news SearchScreen
-│   │   └── saved.tsx            # → features/saved SavedScreen
+│   │   ├── saved.tsx            # → features/saved SavedScreen
+│   │   └── settings.tsx         # → features/settings SettingsScreen
 │   └── article/[url].tsx        # article-detail route → binds composition/useArticleDetail
 ├── core/
 │   ├── opticore.config.ts       # CoreConfig: newsapi baseURL + X-Api-Key header
@@ -47,7 +48,8 @@ src/
 │   └── query/queryClient.ts     # shared React Query client
 ├── shared/                      # cross-feature building blocks
 │   ├── models/article.ts        # Article domain model (used by news + saved)
-│   ├── components/              # ArticleCard, article list helpers
+│   ├── components/              # TextField, OfflineBanner (primitives) + article/ (ArticleCard, list helpers)
+│   ├── constants/env.ts         # NEWS_API_KEY (single read of EXPO_PUBLIC_NEWS_API_KEY)
 │   ├── hooks/useOpenArticle.ts  # shared nav command (wraps useRouter once)
 │   └── theme/useStyles.ts       # styling hook
 ├── composition/                # cross-feature composition (above features, below routes)
@@ -64,10 +66,16 @@ src/
     │   ├── ui/components/        # CategoryFilter, SearchBar
     │   ├── ui/screens/           # NewsListScreen, SearchScreen (Views), ArticleDetailScreen (presentational)
     │   └── index.ts              # the feature's public surface
-    └── saved/                   # bookmarks vertical slice (store-only, no API)
-        ├── store/savedStore.ts   # persisted Zustand store (createPersistStorage)
-        ├── hooks/useSavedScreen.tsx  # ViewModel
-        ├── ui/screens/SavedScreen.tsx
+    ├── saved/                   # bookmarks vertical slice (store-only, no API)
+    │   ├── store/savedStore.ts   # persisted Zustand store (createPersistStorage)
+    │   ├── hooks/useSavedScreen.tsx  # ViewModel
+    │   ├── ui/screens/SavedScreen.tsx
+    │   └── index.ts
+    └── settings/                # preferences + theme (forms vertical slice)
+        ├── model/preferences.ts # domain: Preferences + PAGE_SIZE constraint
+        ├── store/preferencesStore.ts  # persisted prefs (createPersistStorage)
+        ├── hooks/useSettingsScreen.tsx  # ViewModel — owns the Zod form schema + theme control
+        ├── ui/screens/SettingsScreen.tsx  # form via shared TextField + light/dark/system toggle
         └── index.ts
 
 test/                            # jest suites mirror src/ (repository, query, store)
@@ -81,11 +89,12 @@ NewsListScreen (View) ─▶ useNewsListScreen (ViewModel)
         └─▶ useTopHeadlines(category)              [React Query: cache/loading/error/refetch]
                    └─▶ newsRepository.getTopHeadlines(category)   [Repository]
                               └─▶ newsEndpoints.topHeadlines(category)   [{ url, params }]
-                                     └─▶ OptiCore ApiClient.request({ GET, … })
+                                     └─▶ api.get(url, { params })  [facade → body, query serialized]
                                             └─▶ newsapi.org/v2
 
 SearchScreen (View) ─▶ useSearchScreen (ViewModel: term + debounce) ─▶ useSearchNews(query) ─▶ newsRepository.search(query) ─▶ …
 SavedScreen (View)  ─▶ useSavedScreen (ViewModel) ─▶ useSavedStore.items
+SettingsScreen (View) ─▶ useSettingsScreen (ViewModel: useFormState + Zod, useTheme().setMode) ─▶ usePreferencesStore
 article/[url] route ─▶ useArticleDetail (composition: news cache + saved) ─▶ ArticleDetailScreen
 ArticleCard "save"  ──▶ useSavedStore.toggle(article)  [persisted across restarts]
 ```
@@ -102,8 +111,9 @@ ArticleCard "save"  ──▶ useSavedStore.toggle(article)  [persisted across r
   persisted bookmarks (`savedStore`). Server data lives in **React Query**, never the store.
 - Navigation uses **typed route builders** in `core/navigation/routes.ts` — no inline path
   strings at call sites.
-- All HTTP goes through **OptiCore's `ApiClient`** (baseURL, retry, the `X-Api-Key` header set
-  once in `core/opticore.config.ts`).
+- All HTTP goes through the **`api` facade** (verbs return the body; no `.getInstance()`), backed by
+  OptiCore's configured client (baseURL, retry, the `X-Api-Key` header set once in
+  `core/opticore.config.ts`). App code uses the `api` / `storage` / `logger` facades throughout.
 
 ## Notes
 

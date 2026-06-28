@@ -15,7 +15,7 @@ flowchart TD
     VM -.nav command.-> Nav["useOpenArticle"]
     H --> Repo["Repository"]
     Repo --> E["newsEndpoints<br/>({ url, params })"]
-    E --> AC["OptiCore ApiClient<br/>(serializes query)"]
+    E --> AC["api facade<br/>api.get(url,{params}) → body"]
     AC --> API["newsapi.org"]
 
     classDef api fill:#fde,stroke:#c39
@@ -35,9 +35,9 @@ newsapi's response shape · `newsEndpoints` is the only file that defines paths/
 ```mermaid
 flowchart LR
     app["src/app<br/>routes"] --> comp["src/composition<br/>cross-feature VMs"]
-    comp --> features["src/features<br/>news · saved"]
+    comp --> features["src/features<br/>news · saved · settings"]
     app --> features
-    features --> shared["src/shared<br/>Article · ArticleCard · theme · useOpenArticle"]
+    features --> shared["src/shared<br/>Article · components (TextField, article/) · theme · constants/env"]
     features --> core["src/core<br/>config · nav · queryClient"]
     app --> core
 ```
@@ -53,7 +53,8 @@ features never import each other — cross-feature wiring lives in `src/composit
 flowchart TD
     L["_layout.tsx"] --> OP["OptiCoreProvider<br/>(transport + errors)"]
     OP --> QP["QueryClientProvider<br/>(server cache)"]
-    QP --> ST["Stack → (tabs)"]
+    QP --> EB["OptiCoreErrorBoundary<br/>+ OfflineBanner"]
+    EB --> ST["Stack → (tabs)"]
     cfg["core/opticore.config.ts<br/>baseURL · X-Api-Key · timeout"] -.feeds.-> OP
     qc["core/query/queryClient.ts<br/>retry · staleTime"] -.feeds.-> QP
     idx["index.tsx"] -.Redirect.-> head["(tabs)/headlines"]
@@ -75,7 +76,7 @@ sequenceDiagram
     participant H as useTopHeadlines
     participant Repo as newsRepository
     participant E as newsEndpoints
-    participant AC as ApiClient
+    participant AC as api facade
     Rt->>Sc: render
     Sc->>VM: useNewsListScreen()
     VM->>Z: read category
@@ -83,7 +84,7 @@ sequenceDiagram
     H->>Repo: getTopHeadlines(category)
     Repo->>E: topHeadlines(category)
     E-->>Repo: { url, params }
-    Repo->>AC: request({ GET, url, params })
+    Repo->>AC: api.get(url, { params })
     AC-->>Repo: body → Article[]
     Repo-->>VM: Article[]
     Note over Sc: VM exposes renderItem → openArticle(url)
@@ -139,6 +140,25 @@ flowchart LR
 
 ---
 
+## 4E. Settings — form + theme + preferences
+
+```mermaid
+flowchart TD
+    Sc["SettingsScreen (View)<br/>TextField · mode buttons"] --> VM["useSettingsScreen (VM)"]
+    VM --> F["useFormState + Zod<br/>(preferencesForm)"]
+    VM --> T["useTheme().setMode<br/>light / dark / system"]
+    VM --> Z["usePreferencesStore<br/>(persisted)"]
+    M["model/preferences.ts<br/>Preferences + PAGE_SIZE"] -.constraint.-> F
+```
+
+The **VM owns validation** (the Zod form schema lives with `useSettingsScreen`, referencing the
+domain constraint `PAGE_SIZE` from `model/`). The View binds only to the VM — it never touches
+React Hook Form or the theme manager. The form is built from the shared `TextField`. Also wired
+globally: an **offline banner** (`useConnectivity`) in `_layout`, and a two-column tablet grid in
+the news list (`useResponsive`).
+
+---
+
 ## 5. Two state systems — never mix
 
 ```mermaid
@@ -188,17 +208,21 @@ Consumers import from the feature root `index.ts` — never deep paths, never th
 ```mermaid
 flowchart LR
     OC["opticore-react-native"]
-    OC --> t1["ApiClient.request({ url, params }) · transport + query serialization"]
+    OC --> t1["api.get(url, { params }) · facade → body, query serialized"]
+    OC --> t2["storage · logger facades · no getInstance"]
     OC --> t3["ApiError + toMessage · auto errors"]
-    OC --> t4["createQueryClient · retry defaults"]
-    OC --> t5["createPersistStorage · saved store"]
-    OC --> t6["useTheme → useStyles · tokens"]
-    OC --> t7["useDebounce · search"]
-    OC --> t8["withOptiCoreMetroConfig · single React"]
+    OC --> t4["createQueryClient · createQueryHook · retry defaults"]
+    OC --> t5["createPersistStorage · saved + preferences stores"]
+    OC --> t6["useTheme → useStyles · tokens · setMode"]
+    OC --> t7["useDebounce · useConnectivity · useResponsive"]
+    OC --> t8["useFormState + z (Zod) · settings form"]
+    OC --> t9["OptiCoreProvider · OptiCoreErrorBoundary · withOptiCoreMetroConfig"]
 ```
 
-`buildUrl` is still exported by the library, but the app passes `params` to `request()` and lets
-the client serialize the query string, so call sites never build URLs by hand.
+**Facade-only:** app code uses the `api` / `storage` / `logger` facades — never `.getInstance()`.
+`api` verbs return the response **body** directly (`api.get<Article[]>(...)`), and passing `params`
+lets the client serialize the query string, so call sites never build URLs by hand. Drop to the
+singletons only for rare advanced config (custom interceptors).
 
 ---
 
@@ -214,9 +238,13 @@ flowchart TD
     Q -->|new API path/params| A5["newsEndpoints.ts only ({ url, params })"]
     Q -->|new tab| A6["core/navigation/tabs.ts + src/app/(tabs)/"]
     Q -->|client/UI state| A7["features/&lt;f&gt;/store/ (Zustand)"]
-    Q -->|used by 2+ features| A8["src/shared/"]
+    Q -->|form + validation| A7b["features/&lt;f&gt;/hooks (VM owns the Zod schema) + model/ (domain constraint)"]
+    Q -->|used by 2+ features| A8["src/shared/ — generic → components/, domain widget → components/&lt;domain&gt;/"]
     Q -->|app-wide wiring| A9["src/core/"]
 ```
+
+> Empty scaffold dirs (`shared/utils`, `shared/repositories`, `features/*/utils`) are intentional
+> placeholders showing where things go — keep the shape consistent when adding a feature.
 
 ---
 
@@ -240,8 +268,9 @@ npx tsc --noEmit                 # type-check (strict, keep at 0)
 npm test                         # jest
 ```
 
-Needs `EXPO_PUBLIC_NEWS_API_KEY` in `.env`. Targets **Expo SDK 54** (dev-only; newsapi free
-tier authorizes localhost only). Don't bump SDK/native modules without intent.
+Needs `EXPO_PUBLIC_NEWS_API_KEY` in `.env` (Expo only inlines `EXPO_PUBLIC_*` into the client; it's
+read once in `shared/constants/env.ts` and exposed app-wide as `NEWS_API_KEY`). Targets **Expo SDK
+54** (dev-only; newsapi free tier authorizes localhost only). Don't bump SDK/native modules without intent.
 
 ---
 
@@ -249,4 +278,5 @@ tier authorizes localhost only). Don't bump SDK/native modules without intent.
 
 `_layout.tsx` → `headlines.tsx` → `NewsListScreen` (View) → `useNewsListScreen` (ViewModel) →
 `useTopHeadlines` → `newsRepository` → `newsEndpoints` → `composition/useArticleDetail` →
-`article/[url].tsx` → `savedStore.ts`. That covers every pattern.
+`article/[url].tsx` → `savedStore.ts` → `settings/useSettingsScreen` (forms + theme). That covers
+every pattern.
