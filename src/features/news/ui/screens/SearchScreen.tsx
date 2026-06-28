@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { toMessage } from 'opticore-react-native';
-import { articleKeyExtractor, LIST_PERF_PROPS } from '@/shared/components/articleList';
+import { articleKeyExtractor, LIST_PERF_PROPS } from '@/shared/components/article';
 import { useStyles, type AppTheme } from '@/shared/theme/useStyles';
 import { useSearchScreen } from '../../hooks/useSearchScreen';
 import { SearchBar } from '../components/SearchBar';

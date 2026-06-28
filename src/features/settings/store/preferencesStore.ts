@@ -1,16 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createPersistStorage } from 'opticore-react-native';
+import type { Preferences } from '../model/preferences';
 
 /** Persisted-store key. */
 const STORE_KEY = 'preferences';
 
-interface PreferencesState {
-  /** ISO 2-letter country for top headlines. */
-  country: string;
-  /** Page size for search results. */
-  pageSize: number;
-  setPreferences: (prefs: { country: string; pageSize: number }) => void;
+interface PreferencesState extends Preferences {
+  setPreferences: (prefs: Preferences) => void;
 }
 
 /**

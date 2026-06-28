@@ -1,70 +1,62 @@
-import { useEffect, useState } from 'react';
-import { z, useFormState, storage, logger, useTheme } from 'opticore-react-native';
+import { useState } from 'react';
+import { z, useFormState, logger, useTheme } from 'opticore-react-native';
 import { usePreferencesStore } from '../store/preferencesStore';
+import { PAGE_SIZE } from '../model/preferences';
 
-/** Secure-storage key for the newsapi key. */
-const API_KEY_STORAGE = 'news_api_key';
-
-/** Zod schema — showcases length, regex, and refine validation. */
-const schema = z.object({
+/**
+ * Form-input validation (string-typed fields → coerced to the domain `Preferences`
+ * on save). This is a ViewModel concern, not the domain model.
+ */
+const preferencesForm = z.object({
   country: z.string().length(2, 'Use a 2-letter country code (e.g. us, gb)'),
   pageSize: z
     .string()
     .regex(/^\d+$/, 'Numbers only')
-    .refine((v) => Number(v) >= 1 && Number(v) <= 100, 'Between 1 and 100'),
-  apiKey: z.string().optional(),
+    .refine(
+      (v) => Number(v) >= PAGE_SIZE.min && Number(v) <= PAGE_SIZE.max,
+      `Between ${PAGE_SIZE.min} and ${PAGE_SIZE.max}`
+    ),
 });
 
-type PreferencesForm = z.infer<typeof schema>;
+type PreferencesForm = z.infer<typeof preferencesForm>;
 
 /**
- * Settings screen logic — bundles three OptiCore strengths:
- * - Forms: `useFormState` + Zod validation
- * - Secure storage: the API key is read/written via `storage.secure` (Keychain/Keystore)
- * - Theme control: `useTheme().setMode` for the light/dark/system toggle
+ * ViewModel for the Settings screen (MVVM). The screen (View) binds only to what
+ * this hook returns and never touches React Hook Form, the theme manager, or the
+ * store directly. Bundles two OptiCore strengths — Forms (`useFormState` + Zod)
+ * and theme control (`useTheme().setMode`) — and persists via `usePreferencesStore`.
  */
 export function useSettingsScreen() {
-  const theme = useTheme();
+  const { mode, setMode } = useTheme();
   const { country, pageSize, setPreferences } = usePreferencesStore();
   const [saved, setSaved] = useState(false);
 
   const { handleSubmit, setValue, watch, errors, isValid } = useFormState<PreferencesForm>({
-    schema,
-    defaultValues: { country, pageSize: String(pageSize), apiKey: '' },
+    schema: preferencesForm,
+    defaultValues: { country, pageSize: String(pageSize) },
     mode: 'onChange',
   });
 
-  // Load the stored API key from secure storage into the form on mount.
-  useEffect(() => {
-    storage.secure.get<string>(API_KEY_STORAGE).then((key) => {
-      if (key) setValue('apiKey', key);
-    });
-  }, [setValue]);
-
-  // `handleSubmit(onValid)` validates and runs onValid immediately, so call it
-  // on press (not at render).
+  // `handleSubmit(onValid)` validates and runs onValid immediately, so call it on press.
   const submit = () =>
-    handleSubmit(async (values) => {
+    handleSubmit((values) => {
       setPreferences({ country: values.country, pageSize: Number(values.pageSize) });
-      if (values.apiKey) {
-        await storage.secure.set(API_KEY_STORAGE, values.apiKey);
-      }
       logger.info('Preferences saved', { country: values.country, pageSize: values.pageSize });
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     });
 
   return {
-    theme,
-    values: {
-      country: watch('country'),
-      pageSize: watch('pageSize'),
-      apiKey: watch('apiKey') ?? '',
-    },
-    setValue,
-    errors,
-    isValid,
-    submit,
+    // theme
+    mode,
+    setMode,
+    // form fields + validation (RHF specifics hidden behind a simple interface)
+    fields: { country: watch('country'), pageSize: watch('pageSize') },
+    errors: { country: errors.country?.message, pageSize: errors.pageSize?.message },
+    setField: (name: keyof PreferencesForm, value: string) =>
+      setValue(name, value, { shouldValidate: true }),
+    canSave: isValid,
     saved,
+    submit,
   };
 }

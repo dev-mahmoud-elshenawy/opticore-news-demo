@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import type { Article } from '@/shared/models/article';
-import { ArticleCard } from '@/shared/components/ArticleCard';
+import { ArticleCard } from '@/shared/components/article';
 import { useOpenArticle } from '@/shared/hooks/useOpenArticle';
 import { useNewsFilterStore } from '../store/newsFilterStore';
 import { useTopHeadlines } from '../query/useTopHeadlines';

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDebounce } from 'opticore-react-native';
 import type { Article } from '@/shared/models/article';
-import { ArticleCard } from '@/shared/components/ArticleCard';
+import { ArticleCard } from '@/shared/components/article';
 import { useOpenArticle } from '@/shared/hooks/useOpenArticle';
 import { useSearchNews } from '../query/useSearchNews';
 

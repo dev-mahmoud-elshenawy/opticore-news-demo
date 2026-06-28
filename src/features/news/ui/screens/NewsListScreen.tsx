@@ -2,7 +2,7 @@ import React from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { toMessage } from 'opticore-react-native';
 import { useResponsive } from 'opticore-react-native/hooks';
-import { articleKeyExtractor, LIST_PERF_PROPS } from '@/shared/components/articleList';
+import { articleKeyExtractor, LIST_PERF_PROPS } from '@/shared/components/article';
 import { useStyles, type AppTheme } from '@/shared/theme/useStyles';
 import { useNewsListScreen } from '../../hooks/useNewsListScreen';
 import { CategoryFilter } from '../components/CategoryFilter';

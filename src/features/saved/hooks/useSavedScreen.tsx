@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import type { Article } from '@/shared/models/article';
-import { ArticleCard } from '@/shared/components/ArticleCard';
+import { ArticleCard } from '@/shared/components/article';
 import { useOpenArticle } from '@/shared/hooks/useOpenArticle';
 import { useSavedStore } from '../store/savedStore';
 

@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useStyles, type AppTheme } from '@/shared/theme/useStyles';
+import { TextField } from '@/shared/components/TextField';
 
 export function SearchBar({
   value,
@@ -11,28 +12,21 @@ export function SearchBar({
 }) {
   const styles = useStyles(createStyles);
   return (
-    <TextInput
-      style={styles.input}
-      value={value}
-      onChangeText={onChangeText}
-      placeholder="Search news…"
-      autoCorrect={false}
-      autoCapitalize="none"
-      clearButtonMode="while-editing"
-      returnKeyType="search"
-    />
+    <View style={styles.wrapper}>
+      <TextField
+        value={value}
+        onChangeText={onChangeText}
+        placeholder="Search news…"
+        autoCorrect={false}
+        autoCapitalize="none"
+        clearButtonMode="while-editing"
+        returnKeyType="search"
+      />
+    </View>
   );
 }
 
 const createStyles = (t: AppTheme) =>
   StyleSheet.create({
-    input: {
-      backgroundColor: t.colors.card,
-      borderRadius: t.borderRadius.md,
-      paddingHorizontal: t.spacing.md,
-      paddingVertical: t.spacing.sm,
-      fontSize: t.typography.sizes.md,
-      color: t.colors.text,
-      marginVertical: t.spacing.sm,
-    },
+    wrapper: { marginVertical: t.spacing.sm },
   });
