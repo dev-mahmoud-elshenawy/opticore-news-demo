@@ -26,13 +26,13 @@ export function ArticleDetailScreen({
   if (!article) {
     return (
       <View style={styles.center}>
-        <Text>Article not available.</Text>
+        <Text style={styles.emptyText}>Article not available.</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       {article.urlToImage ? (
         <Image source={{ uri: article.urlToImage }} style={styles.image} />
       ) : null}
@@ -63,8 +63,16 @@ export function ArticleDetailScreen({
 
 const createStyles = (t: AppTheme) =>
   StyleSheet.create({
-    container: { padding: t.spacing.md },
-    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    screen: { flex: 1, backgroundColor: t.colors.background },
+    container: { padding: t.spacing.md, backgroundColor: t.colors.background },
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: t.colors.background,
+      padding: t.spacing.md,
+    },
+    emptyText: { color: t.colors.text },
     image: { width: '100%', height: 200, borderRadius: t.borderRadius.lg, marginBottom: t.spacing.md },
     title: {
       fontSize: t.typography.sizes.xxl,

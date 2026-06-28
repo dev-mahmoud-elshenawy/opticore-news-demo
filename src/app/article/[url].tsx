@@ -15,7 +15,13 @@ export default function ArticleRoute() {
 
   return (
     <>
-      <Stack.Screen options={{ title: ARTICLE_TITLE }} />
+      <Stack.Screen
+        options={{
+          title: ARTICLE_TITLE,
+          headerBackTitle: '',
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
       <ArticleDetailScreen
         article={article}
         isSaved={isSaved}

@@ -1,7 +1,8 @@
 import type { Article } from '@/shared/models/article';
 
-/** Stable keyExtractor for article lists (avoids inline closures per render). */
-export const articleKeyExtractor = (article: Article) => article.url;
+/** Stable keyExtractor for article lists; NewsAPI can return duplicate URLs. */
+export const articleKeyExtractor = (article: Article, index: number) =>
+  `${article.url}-${index}`;
 
 /** Shared FlatList virtualization tuning for article lists. */
 export const LIST_PERF_PROPS = {
