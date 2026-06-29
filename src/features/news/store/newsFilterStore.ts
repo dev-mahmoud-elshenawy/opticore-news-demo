@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { createClientStore } from 'opticore-react-native';
 import type { NewsCategory } from '../model/news.types';
 
 const DEFAULT_CATEGORY: NewsCategory = 'general';
@@ -10,8 +10,11 @@ interface NewsFilterState {
 }
 
 /** Ephemeral UI state only — server data belongs to React Query, not here. */
-export const useNewsFilterStore = create<NewsFilterState>((set) => ({
-  category: DEFAULT_CATEGORY,
-  setCategory: (category) => set({ category }),
-  reset: () => set({ category: DEFAULT_CATEGORY }),
-}));
+export const useNewsFilterStore = createClientStore<NewsFilterState>(
+  { name: 'news-filter' },
+  (set) => ({
+    category: DEFAULT_CATEGORY,
+    setCategory: (category) => set({ category }),
+    reset: () => set({ category: DEFAULT_CATEGORY }),
+  })
+);
