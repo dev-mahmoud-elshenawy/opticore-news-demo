@@ -1,10 +1,44 @@
 # OptiCore News Demo
 
-A reference Expo app showing a **feature-based architecture** on top of
-[`opticore-react-native`](../opticore-react-native): the **repository pattern** for the API
-layer, **React Query** for server-state caching, and **Zustand** for ephemeral/persisted client
-state. It ships three features — **Headlines**, **Search**, and **Saved** — across a bottom-tab
+[![Expo SDK](https://img.shields.io/badge/Expo_SDK-54-000020?logo=expo&logoColor=white)](https://expo.dev) [![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?logo=react&logoColor=black)](https://reactnative.dev) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org) [![Built with opticore-react-native](https://img.shields.io/badge/built_with-opticore--react--native-7C3AED)](https://github.com/dev-mahmoud-elshenawy/opticore-react-native)
+
+The official **reference implementation** for
+[`opticore-react-native`](https://github.com/dev-mahmoud-elshenawy/opticore-react-native)
+([npm](https://www.npmjs.com/package/opticore-react-native)) — an Expo app that consumes the
+library end-to-end through its **facades and factories**, never reaching for the underlying
+singletons (`.getInstance()`) or third-party libraries (`zustand`, `axios`) directly.
+
+It demonstrates a **feature-based architecture** on top of OptiCore: the **repository pattern**
+over the `api` facade for the network layer, **React Query** for server-state caching, and
+OptiCore's **`createClientStore`** factory for ephemeral/persisted client state. It ships three
+feature slices — **news** (Headlines + Search), **Saved**, and **Settings** — across a bottom-tab
 layout, backed by [newsapi.org](https://newsapi.org).
+
+## Features
+
+- 📰 **Headlines** — top stories by category, with React Query loading / error / refetch states and a two-column tablet layout
+- 🔎 **Search** — debounced full-text search over newsapi's `/everything`
+- 🔖 **Saved** — bookmark articles, persisted across restarts (store-only, no API)
+- ⚙️ **Settings** — a Zod-validated preferences form (country, page size) plus light / dark / system theming
+- 📴 **Offline-aware** — a global connectivity banner; API failures surface through OptiCore's `ApiError`
+
+## What this demonstrates
+
+A map from OptiCore's public API to where the demo exercises it — open the right column to see a
+real, production-shaped usage of each piece.
+
+| OptiCore                                               | Where in the demo                                                   |
+| ------------------------------------------------------ | ------------------------------------------------------------------- |
+| `OptiCoreProvider` · `OptiCoreErrorBoundary`           | `src/app/_layout.tsx` (wraps the app, configured once)              |
+| `CoreConfig` (baseURL · headers · retry · timeout)     | `src/core/opticore.config.ts`                                       |
+| `api` facade (verbs return the body, no `getInstance`) | `features/news/api/newsRepository.ts`                               |
+| `createQueryClient` + React Query defaults             | `src/core/query/queryClient.ts` + `features/news/query/`            |
+| `createClientStore` (client state, optional `persist`) | `saved` · `settings` · `news` stores (no direct `zustand` import)   |
+| `useFormState` + Zod                                   | `features/settings/hooks/useSettingsScreen.tsx`                     |
+| `useTheme` / `useStyles` · light/dark/system           | `shared/theme/useStyles.ts` + Settings screen                      |
+| `useDebounce` · `useConnectivity` · `useResponsive`    | Search VM · global `OfflineBanner` · tablet grid                    |
+| `ApiError` (auto-thrown on non-2xx)                    | repositories map only the success body                              |
+| `withOptiCoreMetroConfig` (single React instance)      | `metro.config.js`                                                   |
 
 ## Getting started
 
@@ -61,19 +95,19 @@ src/
     │   │   └── newsRepository.ts # repository — the ONLY code that knows newsapi
     │   ├── model/news.types.ts   # NewsCategory, TopHeadlinesResponse, …
     │   ├── query/                # useTopHeadlines, useSearchNews, useArticleByUrl + newsKeys
-    │   ├── store/newsFilterStore.ts  # Zustand — selected category (UI state only)
+    │   ├── store/newsFilterStore.ts  # createClientStore — selected category (UI state only)
     │   ├── hooks/                # ViewModels: useNewsListScreen, useSearchScreen
     │   ├── ui/components/        # CategoryFilter, SearchBar
     │   ├── ui/screens/           # NewsListScreen, SearchScreen (Views), ArticleDetailScreen (presentational)
     │   └── index.ts              # the feature's public surface
     ├── saved/                   # bookmarks vertical slice (store-only, no API)
-    │   ├── store/savedStore.ts   # persisted Zustand store (createPersistStorage)
+    │   ├── store/savedStore.ts   # createClientStore (persist: true) — bookmarks
     │   ├── hooks/useSavedScreen.tsx  # ViewModel
     │   ├── ui/screens/SavedScreen.tsx
     │   └── index.ts
     └── settings/                # preferences + theme (forms vertical slice)
         ├── model/preferences.ts # domain: Preferences + PAGE_SIZE constraint
-        ├── store/preferencesStore.ts  # persisted prefs (createPersistStorage)
+        ├── store/preferencesStore.ts  # createClientStore (persist: true) — prefs
         ├── hooks/useSettingsScreen.tsx  # ViewModel — owns the Zod form schema + theme control
         ├── ui/screens/SettingsScreen.tsx  # form via shared TextField + light/dark/system toggle
         └── index.ts
@@ -92,7 +126,7 @@ NewsListScreen (View) ─▶ useNewsListScreen (ViewModel)
                                      └─▶ api.get(url, { params })  [facade → body, query serialized]
                                             └─▶ newsapi.org/v2
 
-SearchScreen (View) ─▶ useSearchScreen (ViewModel: term + debounce) ─▶ useSearchNews(query) ─▶ newsRepository.search(query) ─▶ …
+SearchScreen (View) ─▶ useSearchScreen (ViewModel: term + debounce) ─▶ useSearchNews(query) ─▶ newsRepository.searchEverything(query) ─▶ …
 SavedScreen (View)  ─▶ useSavedScreen (ViewModel) ─▶ useSavedStore.items
 SettingsScreen (View) ─▶ useSettingsScreen (ViewModel: useFormState + Zod, useTheme().setMode) ─▶ usePreferencesStore
 article/[url] route ─▶ useArticleDetail (composition: news cache + saved) ─▶ ArticleDetailScreen
@@ -107,8 +141,9 @@ ArticleCard "save"  ──▶ useSavedStore.toggle(article)  [persisted across r
 - The **repository** is the only place that knows newsapi's envelope; **`newsEndpoints`** is the
   only place that defines paths/query params (returning `{ url, params }` descriptors that
   `ApiClient` serializes). The repository returns typed `Article[]` and throws on API errors.
-- **Zustand** holds only client state: ephemeral UI state (`newsFilterStore`'s category) or
-  persisted bookmarks (`savedStore`). Server data lives in **React Query**, never the store.
+- Client state uses OptiCore's **`createClientStore`** factory (no direct `zustand` import):
+  ephemeral UI state (`newsFilterStore`'s category) or persisted state (`savedStore`,
+  `preferencesStore`, via `persist: true`). Server data lives in **React Query**, never a store.
 - Navigation uses **typed route builders** in `core/navigation/routes.ts` — no inline path
   strings at call sites.
 - All HTTP goes through the **`api` facade** (verbs return the body; no `.getInstance()`), backed by
@@ -120,4 +155,5 @@ ArticleCard "save"  ──▶ useSavedStore.toggle(article)  [persisted across r
 - Runs on **Expo SDK 54** (Expo Go compatible).
 - Linked to the local library via `"opticore-react-native": "file:../opticore-react-native"` with
   `withOptiCoreMetroConfig` (in `metro.config.js`) to keep a single React instance.
-- Saved articles persist via OptiCore's `createPersistStorage`; only the `items` array is written.
+- Saved articles and preferences persist via `createClientStore`'s `persist: true`; `partialize`
+  writes only data (e.g. the `items` array), never the action functions.

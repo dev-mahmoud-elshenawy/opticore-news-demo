@@ -134,7 +134,7 @@ imports neither store.
 flowchart LR
     Sc["SavedScreen (View)"] --> VM["useSavedScreen (VM)"]
     VM --> Z["useSavedStore<br/>items / toggle / isSaved"]
-    Z --> P["persist + createPersistStorage"]
+    Z --> P["createClientStore<br/>(persist: true)"]
     P --> Disk["device storage<br/>(only items written)"]
 ```
 
@@ -167,7 +167,7 @@ flowchart TB
         rq1["headlines"]
         rq2["search results"]
     end
-    subgraph ZU["Zustand · CLIENT state"]
+    subgraph ZU["createClientStore · CLIENT state"]
         z1["newsFilterStore<br/>(category)"]
         z2["savedStore<br/>(bookmarks, persisted)"]
     end
@@ -175,7 +175,8 @@ flowchart TB
     VM --> ZU
 ```
 
-Fetched data → React Query. UI/local/persisted client state → Zustand. Never the reverse.
+Fetched data → React Query. UI/local/persisted client state → OptiCore's `createClientStore`
+(zustand under the hood; app code never imports zustand directly). Never the reverse.
 
 ---
 
@@ -212,7 +213,7 @@ flowchart LR
     OC --> t2["storage · logger facades · no getInstance"]
     OC --> t3["ApiError + toMessage · auto errors"]
     OC --> t4["createQueryClient · createQueryHook · retry defaults"]
-    OC --> t5["createPersistStorage · saved + preferences stores"]
+    OC --> t5["createClientStore · saved · preferences · filter stores"]
     OC --> t6["useTheme → useStyles · tokens · setMode"]
     OC --> t7["useDebounce · useConnectivity · useResponsive"]
     OC --> t8["useFormState + z (Zod) · settings form"]
@@ -237,7 +238,7 @@ flowchart TD
     Q -->|new data fetch| A4["query/ hook + repository method + newsKeys + newsEndpoints"]
     Q -->|new API path/params| A5["newsEndpoints.ts only ({ url, params })"]
     Q -->|new tab| A6["core/navigation/tabs.ts + src/app/(tabs)/"]
-    Q -->|client/UI state| A7["features/&lt;f&gt;/store/ (Zustand)"]
+    Q -->|client/UI state| A7["features/&lt;f&gt;/store/ (createClientStore)"]
     Q -->|form + validation| A7b["features/&lt;f&gt;/hooks (VM owns the Zod schema) + model/ (domain constraint)"]
     Q -->|used by 2+ features| A8["src/shared/ — generic → components/, domain widget → components/&lt;domain&gt;/"]
     Q -->|app-wide wiring| A9["src/core/"]

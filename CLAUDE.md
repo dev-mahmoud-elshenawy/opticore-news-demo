@@ -70,8 +70,9 @@ route (src/app) → screen (View) → ViewModel hook → React Query hook → re
   **`newsEndpoints`** is the only place that defines paths/query params — it returns
   `{ url, params }` descriptors and lets `ApiClient` (axios) serialize the query string, so there's
   no inline string concatenation or `encodeURIComponent` at call sites.
-- **Zustand holds client state only**: ephemeral UI state (`newsFilterStore` = selected category)
-  or persisted bookmarks (`savedStore`). Server data lives in **React Query**, never in a store.
+- **Client state uses `createClientStore` only** (OptiCore's factory; no direct `zustand` import):
+  ephemeral UI state (`newsFilterStore` = selected category) or persisted state (`savedStore`,
+  `preferencesStore`). Server data lives in **React Query**, never in a store.
 - **Navigation uses typed builders** from `core/navigation/routes.ts` — no inline path strings. The
   shared `useOpenArticle` hook (`shared/hooks`) wraps `useRouter` once so screens/ViewModels never
   repeat it.
@@ -81,10 +82,11 @@ route (src/app) → screen (View) → ViewModel hook → React Query hook → re
 
 ## OptiCore integration specifics
 
-- All HTTP goes through `ApiClient.getInstance().request(...)` — baseURL, retry, timeout, and the
-  `X-Api-Key` header are configured once in `core/opticore.config.ts`.
-- `savedStore` persists via OptiCore's `createPersistStorage`; `partialize` writes only `items` (not
-  the action functions).
+- All HTTP goes through the **`api` facade** (`api.get(url, { params })` — verbs return the body,
+  no `.getInstance()`); baseURL, retry, timeout, and the `X-Api-Key` header are configured once in
+  `core/opticore.config.ts`.
+- `savedStore` / `preferencesStore` persist via `createClientStore`'s `persist: true`; `partialize`
+  writes only data (e.g. `items`), not the action functions.
 - `metro.config.js` wraps the default config with `withOptiCoreMetroConfig` to force a single React
   instance (the library is a local file dependency, so duplicate React/React Native would otherwise
   occur).
