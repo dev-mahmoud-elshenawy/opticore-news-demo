@@ -10,12 +10,13 @@ export function CategoryFilter() {
   const setCategory = useNewsFilterStore((s) => s.setCategory);
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
+    <ScrollView testID="category-scroll" horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
       {NEWS_CATEGORIES.map((c) => {
         const active = c === category;
         return (
           <Pressable
             key={c}
+            testID={`category-chip-${c}`}
             onPress={() => setCategory(c)}
             style={[styles.chip, active && styles.chipActive]}
           >

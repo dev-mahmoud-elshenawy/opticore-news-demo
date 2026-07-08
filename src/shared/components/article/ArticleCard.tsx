@@ -18,7 +18,7 @@ interface ArticleCardProps {
 function ArticleCardComponent({ article, onPress }: ArticleCardProps) {
   const styles = useStyles(createStyles);
   return (
-    <Pressable style={styles.card} onPress={() => onPress(article)}>
+    <Pressable testID="article-card" style={styles.card} onPress={() => onPress(article)}>
       {article.urlToImage ? (
         <Image
           source={article.urlToImage}

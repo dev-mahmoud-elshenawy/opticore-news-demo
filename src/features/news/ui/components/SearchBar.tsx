@@ -14,6 +14,7 @@ export function SearchBar({
   return (
     <View style={styles.wrapper}>
       <TextField
+        testID="search-input"
         value={value}
         onChangeText={onChangeText}
         placeholder="Search news…"

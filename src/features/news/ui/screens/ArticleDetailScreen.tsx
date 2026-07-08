@@ -46,6 +46,7 @@ export function ArticleDetailScreen({
 
       <View style={styles.actions}>
         <Pressable
+          testID="article-save-toggle"
           style={[styles.button, isSaved && styles.buttonActive]}
           onPress={onToggleSave}
         >
@@ -53,7 +54,7 @@ export function ArticleDetailScreen({
             {isSaved ? '★ Saved' : '☆ Save'}
           </Text>
         </Pressable>
-        <Pressable style={[styles.button, styles.buttonPrimary]} onPress={onOpen}>
+        <Pressable testID="article-open-browser" style={[styles.button, styles.buttonPrimary]} onPress={onOpen}>
           <Text style={styles.buttonPrimaryText}>Open in browser</Text>
         </Pressable>
       </View>

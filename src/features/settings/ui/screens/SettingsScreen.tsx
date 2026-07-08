@@ -25,6 +25,7 @@ export function SettingsScreen() {
           return (
             <Pressable
               key={m.value}
+              testID={`theme-mode-${m.value}`}
               style={[styles.segmentItem, active && styles.segmentItemActive]}
               onPress={() => setMode(m.value)}
             >
@@ -37,11 +38,11 @@ export function SettingsScreen() {
       {/* Feed preferences — validated form via the shared TextField */}
       <Text style={styles.heading}>Feed preferences</Text>
 
-      <TextField label="Country (2-letter code)" autoCapitalize="none" placeholder="us" {...field('country')} />
+      <TextField testID="settings-country" label="Country (2-letter code)" autoCapitalize="none" placeholder="us" {...field('country')} />
 
-      <TextField label="Search page size" keyboardType="number-pad" placeholder="30" {...field('pageSize')} />
+      <TextField testID="settings-pagesize" label="Search page size" keyboardType="number-pad" placeholder="30" {...field('pageSize')} />
 
-      <Pressable style={[styles.save, !canSave && styles.saveDisabled]} disabled={!canSave} onPress={() => void save()}>
+      <Pressable testID="settings-save" style={[styles.save, !canSave && styles.saveDisabled]} disabled={!canSave} onPress={() => void save()}>
         <Text style={styles.saveText}>{saved ? 'Saved ✓' : 'Save'}</Text>
       </Pressable>
     </ScrollView>

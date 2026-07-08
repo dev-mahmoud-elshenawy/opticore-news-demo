@@ -18,6 +18,11 @@ npm test                         # jest (jest-expo preset)
 npm run test:watch
 npx jest test/features/news/api/newsRepository.test.ts   # single test file
 npx jest -t "returns articles"                            # single test by name
+
+# Detox end-to-end (native build required — NOT Expo Go). See E2E_TESTING.md.
+npm run e2e:build:ios            # build the debug app for the simulator (redo after native changes)
+npm run e2e:test:ios             # run the full Detox flow on the iOS simulator
+npm run e2e:build:android        # e2e:test:android for the Android emulator
 ```
 
 Requires `EXPO_PUBLIC_NEWS_API_KEY` in `.env` (copy from `.env.example`). newsapi.org's free tier
@@ -94,5 +99,6 @@ route (src/app) → screen (View) → ViewModel hook → React Query hook → re
 ## Conventions
 
 - Path alias `@/*` → `src/*` (configured in both `tsconfig.json` and the jest `moduleNameMapper`).
-- Tests live under `test/`, mirroring the `src/` tree.
+- Unit/integration tests (jest) live under `test/`, mirroring the `src/` tree. Detox
+  end-to-end specs live under `e2e/` — see [E2E_TESTING.md](./E2E_TESTING.md).
 - TypeScript `strict` is on.

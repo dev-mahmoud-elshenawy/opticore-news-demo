@@ -45,3 +45,15 @@ example
 # generated native folders
 /ios
 /android
+
+# local tooling
+.claude
+.claude-flow
+.omc
+
+# npm lockfile (not pushed by choice)
+package-lock.json
+
+# detox e2e run artifacts (screenshots, logs)
+artifacts*/
+*.log

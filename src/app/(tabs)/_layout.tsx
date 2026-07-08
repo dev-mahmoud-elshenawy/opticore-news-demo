@@ -29,6 +29,7 @@ export default function TabsLayout() {
           name={tab.name}
           options={{
             title: tab.title,
+            tabBarButtonTestID: `tab-${tab.name}`,
             tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>{tab.icon}</Text>,
           }}
         />
